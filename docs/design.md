@@ -1,6 +1,6 @@
 # novel-searah-mcp 設計書
 
-> ステータス: **ドラフト v0.1**（2026-04-23 起票）
+> ステータス: **ドラフト v0.2**（2026-04-23 更新）
 > 関連: [`requirements.md`](./requirements.md)
 > 本書は要件定義と対になる設計ドキュメント。基底クラス・I/F・横断的な設計方針を記述する。
 
@@ -159,7 +159,20 @@ class Adapter(ABC):
         """HTTPステータスを共通例外に変換。"""
 ```
 
-### 3.3 アダプター固有の責務分担
+### 3.3 レート制限デフォルト
+
+保守的な値を基準にし、必要に応じて個別に引き上げる。
+
+| ソース | rps（req/sec） | 備考 |
+|---|---|---|
+| narou | **1.0** | なろう小説APIの運用ガイドに準拠。連続大量取得はしない |
+| kindle_jp | 0.5 | 公開ページ解析のみ。アクセス過多回避 |
+| kobo_jp | 0.5 | 同上 |
+| booklive | 0.5 | 同上 |
+| その他Web | 0.5 | デフォルト保守値 |
+| google_trends | pytrends 既定 | 429対策でキャッシュ併用 |
+
+### 3.4 アダプター固有の責務分担
 
 | 責務 | Adapter基底 | 個別Adapter |
 |---|:---:|:---:|
@@ -218,7 +231,18 @@ class Framework(ABC):
         """JSON → Markdown 変換。デフォルト実装あり、子で上書き可。"""
 ```
 
-### 4.3 MVP対象フレームワーク（5つ）
+### 4.3 Markdownスタイル規約
+
+レポート出力のMarkdownは企画書にそのまま貼り付けられる体裁で統一する。
+
+- **絵文字・装飾記号は使用しない**（見出しや箇条書きのみ）
+- 見出しは `##` から始める（埋め込み時に階層を調整しやすい）
+- 箇条書きは `-` を使用
+- 表はGitHub-flavored Markdown
+- フレームワーク名は日本語表記（例: 「3C分析」「ペルソナ」）を見出しに使用
+- 不足入力がある場合、末尾に「## 追加質問」セクションで提示
+
+### 4.4 MVP対象フレームワーク（5つ）
 
 | name | display_name | 追加入力の例 |
 |---|---|---|
@@ -273,11 +297,17 @@ class Framework(ABC):
 |---|---|---|
 | `NOVEL_SEARAH_CACHE_DIR` | キャッシュ格納先 | `~/.cache/novel-searah-mcp` |
 | `NOVEL_SEARAH_USER_AGENT` | 全HTTP共通のUA | `novel-searah-mcp/<ver> (+github URL)` |
-| `NOVEL_SEARAH_PAAPI_ACCESS_KEY` | Amazon PA-API | なし（無しでも公開ページfallbackで動作） |
-| `NOVEL_SEARAH_PAAPI_SECRET_KEY` | 同上 | — |
-| `NOVEL_SEARAH_PAAPI_PARTNER_TAG` | 同上 | — |
+| `NOVEL_SEARAH_PAAPI_*` | Amazon PA-API 関連キー | **初期リリースでは未使用**（§6.3 参照） |
 | `NOVEL_SEARAH_RAKUTEN_APP_ID` | 楽天ブックスAPI | なし |
 | `NOVEL_SEARAH_LOG_LEVEL` | structlog レベル | `INFO` |
+
+### 6.3 Amazon Kindle アクセス方針
+
+- **初期リリースは `amazon.co.jp` の公開ページ解析のみで実装**
+- PA-API は導入しない（契約の前提条件を回避、開発・配布の簡素化）
+- 公開ページ取得の範囲は「ランキングページ」「検索結果ページ」「商品詳細ページ」に限定
+- User-Agent を明示、robots.txt を尊重、保守的レート（§3.3）、長めのキャッシュTTL
+- 将来、PA-API 契約可能なユーザー向けに環境変数での切替えを追加（後続イテレーション）
 
 ---
 
@@ -307,11 +337,12 @@ class Framework(ABC):
 
 ## 9. 未決事項
 
-- [ ] Amazon PA-API 未契約時の fallback 戦略（公開ページ解析のみで十分か）
+- [x] Amazon の取得方針 → **公開ページ解析のみで初期リリース**（§6.3）
+- [x] なろう小説API のレート → **1 req/sec** を保守的デフォルト（§3.3）
+- [x] Markdownテンプレの体裁 → **絵文字・装飾記号なし**（§4.3）
 - [ ] 楽天ブックスAPIのカテゴリマッピング（ラノベ/文芸/コミック）
-- [ ] なろう小説API のレート設計（公式が推奨する間隔を確認）
-- [ ] フレームワーク出力のMarkdown日本語テンプレの標準化（記号・見出し階層）
 - [ ] ログ出力でPII・原稿情報が混入しないためのサニタイザ
+- [ ] Kindle公開ページのHTML構造変化に対する壊れにくい解析戦略（セレクタ抽象化）
 
 ---
 
@@ -320,3 +351,4 @@ class Framework(ABC):
 | 日付 | バージョン | 変更点 |
 |---|---|---|
 | 2026-04-23 | v0.1 | 初版起票（requirements.md v0.3 と対応） |
+| 2026-04-23 | v0.2 | Amazon方針・レート・Markdown規約を確定。§3.3／§4.3／§6.3 を追記 |
