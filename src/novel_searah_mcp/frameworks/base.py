@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -11,12 +11,12 @@ class FrameworkInput(BaseModel):
     genre: str | None = None
     logline: str | None = None
     target_reader: str | None = None
-    extra: dict = Field(default_factory=dict)
+    extra: dict[str, Any] = Field(default_factory=dict)
 
 
 class FrameworkOutput(BaseModel):
     framework: str
-    data: dict
+    data: dict[str, Any]
     markdown: str
     missing_inputs: list[str] = Field(default_factory=list)
     follow_up_questions: list[str] = Field(default_factory=list)
@@ -31,7 +31,7 @@ class Framework(ABC):
     @abstractmethod
     def build(self, payload: FrameworkInput) -> FrameworkOutput: ...
 
-    def render_markdown(self, data: dict) -> str:
+    def render_markdown(self, data: dict[str, Any]) -> str:
         lines = [f"## {self.display_name}", ""]
         for key, value in data.items():
             lines.append(f"- **{key}**: {value}")

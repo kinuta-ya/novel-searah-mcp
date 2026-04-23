@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -42,7 +42,7 @@ class Work(BaseModel):
     metrics: Metrics = Field(default_factory=Metrics)
     published_at: datetime | None = None
     updated_at: datetime | None = None
-    raw: dict = Field(default_factory=dict, exclude=True)
+    raw: dict[str, Any] = Field(default_factory=dict, exclude=True)
 
 
 class HealthStatus(BaseModel):

@@ -50,3 +50,7 @@ select = ["E", "F", "I", "W", "UP", "B"]
 python_version = "3.11"
 strict = true
 packages = ["novel_searah_mcp"]
+
+[[tool.mypy.overrides]]
+module = ["diskcache"]
+ignore_missing_imports = true
