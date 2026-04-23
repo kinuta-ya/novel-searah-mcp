@@ -6,8 +6,14 @@ from mcp.server.fastmcp import FastMCP
 from .adapters.narou import NarouAdapter
 from .cache import Cache
 from .config import Config
+from .frameworks import FrameworkOutput
+from .frameworks.four_p import FourPInput
+from .frameworks.persona import PersonaInput
+from .frameworks.stp import STPInput
+from .frameworks.swot import SWOTInput
+from .frameworks.three_c import ThreeCInput
 from .models import Work
-from .tools.frameworks import FrameworkInfo, list_frameworks
+from .tools.frameworks import FrameworkInfo, build_framework, list_frameworks
 from .tools.search import get_ranking, search_works
 
 
@@ -55,6 +61,41 @@ def build_server() -> FastMCP:
         category: str | None = None,
     ) -> list[Work]:
         return await get_ranking(narou, period=period, limit=limit, category=category)
+
+    @server.tool(
+        name="build_3c",
+        description="3C分析（Customer/Competitor/Company）の構造化レポートを生成する。",
+    )
+    def _build_3c(payload: ThreeCInput) -> FrameworkOutput:
+        return build_framework("3c", payload.model_dump())
+
+    @server.tool(
+        name="build_stp",
+        description="STP分析（Segmentation/Targeting/Positioning）の構造化レポートを生成する。",
+    )
+    def _build_stp(payload: STPInput) -> FrameworkOutput:
+        return build_framework("stp", payload.model_dump())
+
+    @server.tool(
+        name="build_4p",
+        description="4P分析（Product/Price/Place/Promotion）の構造化レポートを生成する。",
+    )
+    def _build_4p(payload: FourPInput) -> FrameworkOutput:
+        return build_framework("4p", payload.model_dump())
+
+    @server.tool(
+        name="build_swot",
+        description="SWOT分析＋クロスSWOTの構造化レポートを生成する。",
+    )
+    def _build_swot(payload: SWOTInput) -> FrameworkOutput:
+        return build_framework("swot", payload.model_dump())
+
+    @server.tool(
+        name="build_persona",
+        description="読者ペルソナの構造化シートを生成する。",
+    )
+    def _build_persona(payload: PersonaInput) -> FrameworkOutput:
+        return build_framework("persona", payload.model_dump())
 
     return server
 

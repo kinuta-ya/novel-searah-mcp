@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel
 
-from ..frameworks import ALL_FRAMEWORKS
+from ..frameworks import ALL_FRAMEWORKS, FrameworkOutput, get_framework
 
 
 class FrameworkInfo(BaseModel):
@@ -21,3 +23,11 @@ def list_frameworks() -> list[FrameworkInfo]:
         )
         for cls in ALL_FRAMEWORKS
     ]
+
+
+def build_framework(name: str, payload: dict[str, Any]) -> FrameworkOutput:
+    """指定されたフレームワークを構築する。`name` は list_frameworks の name と一致。"""
+    cls = get_framework(name)
+    instance = cls()
+    input_obj = cls.InputModel.model_validate(payload)
+    return instance.build(input_obj)
