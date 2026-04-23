@@ -1,11 +1,25 @@
 from __future__ import annotations
 
+import httpx
 from mcp.server.fastmcp import FastMCP
 
+from .adapters.narou import NarouAdapter
+from .cache import Cache
+from .config import Config
+from .models import Work
 from .tools.frameworks import FrameworkInfo, list_frameworks
+from .tools.search import get_ranking, search_works
 
 
 def build_server() -> FastMCP:
+    config = Config.load()
+    cache = Cache(config.cache_dir)
+    client = httpx.AsyncClient(
+        headers={"User-Agent": config.user_agent},
+        timeout=15.0,
+    )
+    narou = NarouAdapter(client, cache, rps=1.0)
+
     server: FastMCP = FastMCP(
         "novel-searah-mcp",
         instructions=(
@@ -20,6 +34,27 @@ def build_server() -> FastMCP:
     )
     def _list_frameworks() -> list[FrameworkInfo]:
         return list_frameworks()
+
+    @server.tool(
+        name="search_works",
+        description="なろう小説APIで作品をキーワード検索する。limitは1〜500。",
+    )
+    async def _search_works(query: str, limit: int = 20) -> list[Work]:
+        return await search_works(narou, query=query, limit=limit)
+
+    @server.tool(
+        name="get_ranking",
+        description=(
+            "なろうの期間別ランキングを取得する。"
+            "period は daily / weekly / monthly / quarterly / yearly / all。"
+        ),
+    )
+    async def _get_ranking(
+        period: str = "daily",
+        limit: int = 20,
+        category: str | None = None,
+    ) -> list[Work]:
+        return await get_ranking(narou, period=period, limit=limit, category=category)
 
     return server
 
