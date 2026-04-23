@@ -1,6 +1,6 @@
 # novel-searah-mcp 要求・要件定義書
 
-> ステータス: **ドラフト v0.1**（2026-04-23 起票）
+> ステータス: **ドラフト v0.2**（2026-04-23 更新）
 > 本書は後続イテレーションで追記・修正されることを前提としたリビングドキュメントです。
 
 ---
@@ -99,22 +99,81 @@ Work (共通スキーマ)
 
 ---
 
-## 6. 提供するMCPツール（初期案）
+## 6. 提供するMCPツール
+
+> **方針**: ビジネス／マーケティングの主要フレームワークは「全部載せ」とする。
+> ただし内部実装は `frameworks/` 配下に1ファイル1フレームワークで揃え、
+> 共通の `Framework` 基底クラスから派生させることで、後から追加・削除を容易にする。
+
+### 6.1 情報取得・分析系ツール
 
 | Tool名 | 役割 | 主要入力 | 主要出力 |
 |---|---|---|---|
 | `search_works` | 横断作品検索 | query, sources[] | Work[] |
 | `get_ranking` | ランキング取得 | source, category, period | Work[] |
 | `analyze_trends` | トレンド抽出 | genre, period | キーワード頻度、急上昇題材 |
-| `build_persona` | ペルソナ生成 | 作品情報 | ペルソナシート |
-| `build_stp` | STP整理 | 作品情報 | STPレポート |
-| `build_4p` | 4P整理 | 作品情報 | 4Pレポート |
-| `build_swot` | SWOT分析 | 作品情報＋競合 | SWOTレポート |
 | `compare_works` | 競合比較 | 自作品, 比較対象[] | 差分・ポジショニング |
 | `evaluate_title` | タイトル評価 | タイトル案[] | スコア・改善示唆 |
 | `suggest_kpi` | KPI設計 | 作品・目標 | 指標テンプレ |
+| `list_frameworks` | 利用可能なフレームワーク一覧 | — | フレームワーク名・用途 |
 
-※ フレームワーク系ツールの「出力」は構造化データ＋Markdownレポートの2形態を返す想定。
+### 6.2 ビジネスフレームワーク系ツール（全部載せ）
+
+> すべて `build_<framework>` 命名に統一。入力は「作品情報（設定・ジャンル・ターゲット等）」、
+> 出力は「構造化データ（JSON）＋Markdownレポート」の2形態。
+> 情報が不足している場合は、LLM側で補完できるようプロンプト用の質問リストを返す。
+
+#### 環境・競合分析系
+
+| Tool名 | フレームワーク | 用途 |
+|---|---|---|
+| `build_pest` | PEST / PESTEL | 政治・経済・社会・技術（+環境・法律）マクロ環境分析 |
+| `build_3c` | 3C | Customer / Competitor / Company |
+| `build_5forces` | ファイブフォース | 業界構造分析（新規参入・代替品・買い手・売り手・既存競合） |
+| `build_swot` | SWOT / クロスSWOT | 強み・弱み・機会・脅威＋戦略クロス |
+| `build_value_chain` | バリューチェーン | 執筆〜販売までの価値連鎖分析 |
+| `build_vrio` | VRIO | 経営資源の競争優位性評価 |
+
+#### 顧客理解系
+
+| Tool名 | フレームワーク | 用途 |
+|---|---|---|
+| `build_stp` | STP | セグメンテーション／ターゲティング／ポジショニング |
+| `build_persona` | ペルソナ | 読者ペルソナシート |
+| `build_customer_journey` | カスタマージャーニーマップ | 認知〜ファン化の道筋 |
+| `build_jtbd` | ジョブ理論（JTBD） | 読者が作品に求める「ジョブ」を分解 |
+| `build_empathy_map` | エンパシーマップ | 読者の Think/Feel/See/Hear/Say/Do |
+| `build_consumer_behavior` | AIDMA / AISAS / SIPS / DECAX | 消費者行動モデルで導線設計 |
+
+#### 戦略立案系
+
+| Tool名 | フレームワーク | 用途 |
+|---|---|---|
+| `build_4p` | 4P（または4C / 7P） | Product・Price・Place・Promotion |
+| `build_ansoff` | アンゾフマトリクス | 既存/新規 × 市場/作品 の成長戦略 |
+| `build_lanchester` | ランチェスター戦略 | 弱者/強者の戦い方選択 |
+| `build_blue_ocean` | ブルーオーシャン（ERRC） | Eliminate/Reduce/Raise/Create で差別化 |
+| `build_plc` | プロダクトライフサイクル | 作品・ジャンルの成熟度判定 |
+| `build_bcg_matrix` | BCGマトリクス | 複数作品のポートフォリオ管理（作家向け） |
+| `build_business_model_canvas` | ビジネスモデルキャンバス | 9ブロックでマネタイズ全体像 |
+| `build_lean_canvas` | リーンキャンバス | 新作企画を1枚で検証 |
+| `build_value_proposition_canvas` | バリュープロポジションキャンバス | 読者の悩み×作品の提供価値 |
+
+#### 小説・コンテンツ特化
+
+| Tool名 | 用途 |
+|---|---|
+| `build_logline` | ログライン／エレベーターピッチ生成（「○○が××する話」形式） |
+| `build_positioning_map` | 2軸ポジショニングマップ（軸候補の提案込み） |
+| `build_title_strategy` | タイトル戦略（なろう系接尾辞・キーワード密度・文字数最適化） |
+| `build_mediamix_fit` | メディアミックス適性（コミカライズ／アニメ化／電子書籍化） |
+| `build_serialization_plan` | 連載計画（更新頻度・話数・区切り・ブクマ誘導ポイント） |
+
+### 6.3 共通出力仕様
+
+- 構造化データ（JSON）: プログラム処理・他フレームワークへの連携用
+- Markdownレポート: 人間が読む用、そのまま企画書に貼れる粒度
+- 情報不足時は `missing_inputs: [...]` を返し、追加質問案をクライアントに提示させる
 
 ---
 
@@ -131,20 +190,88 @@ Work (共通スキーマ)
 
 ---
 
-## 8. 技術スタック（TBD）
+## 8. 技術スタック
 
-候補を列挙。次回決定。
+| 項目 | 採用 | 備考 |
+|---|---|---|
+| 言語 | **Python 3.11+** | スクレイピング・データ処理・作家向けツールの親和性 |
+| MCP SDK | `mcp`（公式 `modelcontextprotocol/python-sdk`） | stdio / SSE 両対応 |
+| パッケージ管理 | `uv` | 高速・lockファイル管理 |
+| HTTPクライアント | `httpx`（async対応） | 並列取得を想定 |
+| HTML解析 | `selectolax`（高速）+ フォールバックで `beautifulsoup4` | |
+| データスキーマ | `pydantic` v2 | 入出力バリデーション |
+| キャッシュ | `diskcache` または SQLite | TTL付き |
+| ロギング | `structlog` | 構造化ログ |
+| テスト | `pytest` + `pytest-asyncio` + `vcrpy`（外部APIリプレイ） | |
+| Lint/Format | `ruff` + `mypy` | |
+| 配布 | **PyPI** ＋ ローカル実行サポート | `uvx novel-searah-mcp` で即実行可能を目指す |
 
-| 項目 | 候補 |
-|---|---|
-| 言語 | **Python**（`mcp` SDK、スクレイピング/データ処理の豊富さ）／ TypeScript（公式SDK成熟） |
-| MCP SDK | `modelcontextprotocol/python-sdk` or `@modelcontextprotocol/sdk` |
-| HTTP | `httpx`（Python）／`undici`（TS） |
-| HTML解析 | `selectolax` / `beautifulsoup4` |
-| キャッシュ | `diskcache` / SQLite |
-| データスキーマ | `pydantic` |
-| テスト | `pytest` + `vcrpy`（外部APIのリプレイ） |
-| 配布 | PyPI ／ npm ／ ローカル実行のみ |
+### 8.1 想定ディレクトリ構成（暫定）
+
+```
+novel-searah-mcp/
+├── pyproject.toml
+├── README.md
+├── docs/
+│   └── requirements.md
+├── src/
+│   └── novel_searah_mcp/
+│       ├── __init__.py
+│       ├── server.py            # MCPエントリポイント
+│       ├── config.py
+│       ├── models.py            # Work等の共通スキーマ（pydantic）
+│       ├── cache.py
+│       ├── adapters/            # 情報ソース毎
+│       │   ├── base.py
+│       │   ├── narou.py
+│       │   ├── kakuyomu.py
+│       │   ├── alphapolis.py
+│       │   ├── novelup.py
+│       │   ├── kindle.py
+│       │   ├── kobo.py
+│       │   ├── booklive.py
+│       │   ├── bookwalker.py
+│       │   ├── publishers.py
+│       │   ├── twitter.py
+│       │   └── google_trends.py
+│       ├── frameworks/          # ビジネスフレームワーク毎
+│       │   ├── base.py          # Framework基底クラス
+│       │   ├── pest.py
+│       │   ├── three_c.py
+│       │   ├── five_forces.py
+│       │   ├── swot.py
+│       │   ├── value_chain.py
+│       │   ├── vrio.py
+│       │   ├── stp.py
+│       │   ├── persona.py
+│       │   ├── customer_journey.py
+│       │   ├── jtbd.py
+│       │   ├── empathy_map.py
+│       │   ├── consumer_behavior.py
+│       │   ├── four_p.py
+│       │   ├── ansoff.py
+│       │   ├── lanchester.py
+│       │   ├── blue_ocean.py
+│       │   ├── plc.py
+│       │   ├── bcg_matrix.py
+│       │   ├── business_model_canvas.py
+│       │   ├── lean_canvas.py
+│       │   ├── value_proposition_canvas.py
+│       │   ├── logline.py
+│       │   ├── positioning_map.py
+│       │   ├── title_strategy.py
+│       │   ├── mediamix_fit.py
+│       │   └── serialization_plan.py
+│       └── tools/               # MCPツール登録
+│           ├── __init__.py
+│           ├── search.py
+│           ├── trends.py
+│           └── frameworks.py
+└── tests/
+    ├── adapters/
+    ├── frameworks/
+    └── fixtures/                # vcrpy カセット
+```
 
 ---
 
@@ -162,12 +289,15 @@ Work (共通スキーマ)
 
 ## 10. 未決事項 / 次のアクション
 
-- [ ] 技術スタック確定（Python or TypeScript）
-- [ ] 配布形態確定（ローカル／PyPI／npm）
-- [ ] 重視するフレームワークの優先順位付け（全部載せ / 厳選）
-- [ ] 電子書籍ソースの優先順位（Kindle 最優先でよいか）
+- [x] 技術スタック確定（**Python 3.11+** / uv / 公式 `mcp` SDK）
+- [x] 配布形態確定（**PyPI ＋ ローカル実行**、`uvx` 対応を目指す）
+- [x] フレームワーク方針（**全部載せ**、§6.2 参照）
+- [x] ディレクトリ構成・モジュール設計（§8.1 暫定案）
+- [ ] 電子書籍ソースの優先順位（Kindle 最優先でよいか、Kobo/BookLive/BookWalker の順序）
 - [ ] MVPスコープの絞り込み（最小構成で何を出すか）
-- [ ] ディレクトリ構成・モジュール設計（要件確定後）
+- [ ] アダプター・フレームワーク基底クラスのインターフェース詳細設計
+- [ ] キャッシュ戦略（TTLデフォルト、キー設計）
+- [ ] 設定ファイル形式（環境変数 / TOML / JSON）
 
 ---
 
@@ -176,3 +306,4 @@ Work (共通スキーマ)
 | 日付 | バージョン | 変更点 |
 |---|---|---|
 | 2026-04-23 | v0.1 | 初版起票 |
+| 2026-04-23 | v0.2 | 技術スタックを Python に確定。フレームワークを全部載せに拡張（§6.2）。ディレクトリ構成案（§8.1）を追記 |
