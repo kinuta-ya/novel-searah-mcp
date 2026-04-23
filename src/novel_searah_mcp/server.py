@@ -3,6 +3,8 @@ from __future__ import annotations
 import httpx
 from mcp.server.fastmcp import FastMCP
 
+from .adapters.base import Adapter
+from .adapters.kindle_jp import KindleJpAdapter
 from .adapters.narou import NarouAdapter
 from .cache import Cache
 from .config import Config
@@ -24,7 +26,10 @@ def build_server() -> FastMCP:
         headers={"User-Agent": config.user_agent},
         timeout=15.0,
     )
-    narou = NarouAdapter(client, cache, rps=1.0)
+    adapters: dict[str, Adapter] = {
+        "narou": NarouAdapter(client, cache, rps=1.0),
+        "kindle_jp": KindleJpAdapter(client, cache, rps=0.5),
+    }
 
     server: FastMCP = FastMCP(
         "novel-searah-mcp",
@@ -43,24 +48,35 @@ def build_server() -> FastMCP:
 
     @server.tool(
         name="search_works",
-        description="なろう小説APIで作品をキーワード検索する。limitは1〜500。",
+        description=(
+            "作品をキーワード検索する。source は narou / kindle_jp。"
+            "なろうは最大 limit=500、Kindle は公開ページ解析のため概ね数十件程度。"
+        ),
     )
-    async def _search_works(query: str, limit: int = 20) -> list[Work]:
-        return await search_works(narou, query=query, limit=limit)
+    async def _search_works(
+        query: str,
+        limit: int = 20,
+        source: str = "narou",
+    ) -> list[Work]:
+        return await search_works(adapters, query=query, limit=limit, source=source)
 
     @server.tool(
         name="get_ranking",
         description=(
-            "なろうの期間別ランキングを取得する。"
-            "period は daily / weekly / monthly / quarterly / yearly / all。"
+            "期間別ランキングを取得する。source は narou / kindle_jp。"
+            "なろうは period で daily/weekly/monthly/quarterly/yearly/all を切替。"
+            "Kindle は公開ページの性質上、現在のベストセラーのみで period は無視される。"
         ),
     )
     async def _get_ranking(
         period: str = "daily",
         limit: int = 20,
+        source: str = "narou",
         category: str | None = None,
     ) -> list[Work]:
-        return await get_ranking(narou, period=period, limit=limit, category=category)
+        return await get_ranking(
+            adapters, period=period, limit=limit, source=source, category=category
+        )
 
     @server.tool(
         name="build_3c",

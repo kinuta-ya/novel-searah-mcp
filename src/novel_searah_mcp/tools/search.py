@@ -1,19 +1,41 @@
 from __future__ import annotations
 
-from ..adapters.narou import NarouAdapter
+from collections.abc import Mapping
+
+from ..adapters.base import Adapter
 from ..models import Work
 
 
-async def search_works(adapter: NarouAdapter, query: str, limit: int = 20) -> list[Work]:
-    """作品をキーワード検索する。現状ソースは「なろう」のみ。"""
+class UnknownSourceError(ValueError):
+    pass
+
+
+async def search_works(
+    adapters: Mapping[str, Adapter],
+    query: str,
+    limit: int = 20,
+    source: str = "narou",
+) -> list[Work]:
+    """指定ソースで作品をキーワード検索する。"""
+    adapter = _resolve(adapters, source)
     return await adapter.search(query, limit=limit)
 
 
 async def get_ranking(
-    adapter: NarouAdapter,
+    adapters: Mapping[str, Adapter],
     period: str = "daily",
     limit: int = 20,
+    source: str = "narou",
     category: str | None = None,
 ) -> list[Work]:
-    """期間別ランキングを取得する。period は daily/weekly/monthly/quarterly/yearly/all。"""
+    """指定ソースの期間別ランキングを取得する。"""
+    adapter = _resolve(adapters, source)
     return await adapter.ranking(category=category, period=period, limit=limit)
+
+
+def _resolve(adapters: Mapping[str, Adapter], source: str) -> Adapter:
+    if source not in adapters:
+        raise UnknownSourceError(
+            f"unknown source '{source}'. available: {sorted(adapters.keys())}"
+        )
+    return adapters[source]
